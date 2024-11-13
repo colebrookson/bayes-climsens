@@ -20,79 +20,68 @@ How strong does the signal of climate change need to be to detect it?
 Assuming we have some data on observed cases of a given infectious disease. The relationship between those observed cases and actual cases is a state process with some observation error, $\epsilon_o$. Cases themselves are now given as a state space model where the number of cases at time $t+1$ are driven by the effect of both temperature variance (consistent through time) and mean temperature (increasing through time), as well as an unobserved driver that is correlated through time with the mean temperature. 
 
 Let:
-- \( C_t \) represent the true number of cases at time \( t \).
-- \( Y_t \) represent the observed number of cases at time \( t \), which includes observational error \( \epsilon_o \).
-- \( T_t \) represent the mean temperature at time \( t \), and let \( V \) represent the temperature variance, assumed constant over time.
-- \( U_t \) represent the unobserved driver correlated with mean temperature \( T_t \).
+- $Y_t$ represent the true number of cases at time $t$.
+- $Y_t^{\text{obs}}$ represent the observed number of cases at time $t$, which includes observational error $\epsilon_o$.
+- $X_{\mu}$ represent the mean temperature at time $t$, and let $X_{\sigma}$ represent the temperature variance, assumed constant over time.
+- $U_t$ represent the unobserved driver correlated with mean temperature $X_{\mu}$.
 
 ### State Process (Evolution) Equation
 
-For the true cases \( C_t \), we specify that the cases at time \( t+1 \) are driven by the temperature effects and an unobserved driver \( U_t \) as follows:
+For the true cases $Y_t$, we specify that the cases at time $t+1$ are driven by the temperature effects and an unobserved driver $U_t$ as follows:
 
-\[
-C_{t+1} \mid C_t, T_t, U_t \sim \text{Poisson} \left(C_t \exp \left( \alpha + \beta_T T_t + \beta_V V + \gamma U_t \right)\right)
-\]
+\begin{equation}
+Y_{t+1} \mid Y_t, X_{\mu}, U_t \sim \text{Poisson} \left(Y_t \exp \left( \alpha + \beta_{\mu} X_{\mu} + \beta_{\sigma} X_{\sigma} + \gamma U_t \right)\right)
+\end{equation}
 
 where:
-- \( \alpha \) is an intercept term.
-- \( \beta_T \) is the effect of mean temperature \( T_t \) on the cases.
-- \( \beta_V \) is the effect of temperature variance \( V \).
-- \( \gamma \) captures the effect of the unobserved driver \( U_t \) on the cases.
+- $\alpha$ is an intercept term.
+- $\beta_{\mu}$ is the effect of mean temperature $X_{\mu}$ on the cases.
+- $\beta_{\sigma}$ is the effect of temperature variance $X_{\sigma}$.
+- $\gamma$ captures the effect of the unobserved driver $U_t$ on the cases.
 
 ### Latent Driver Process
 
-We assume that the unobserved driver \( U_t \) has temporal correlation and is influenced by the mean temperature:
+We assume that the unobserved driver $U_t$ has temporal correlation and is influenced by the mean temperature:
 
-\[
-U_{t+1} \mid U_t, T_t \sim \mathcal{N}(\phi U_t + \eta T_t, \sigma_U^2)
-\]
+\begin{equation}
+U_{t+1} \mid U_t, X_{\mu} \sim \mathcal{N}(\phi U_t + \eta X_{\mu}, \sigma_U^2)
+\end{equation}
 
 where:
-- \( \phi \) is an autoregressive parameter governing the temporal correlation of \( U_t \).
-- \( \eta \) is the strength of the correlation between \( U_t \) and \( T_t \).
-- \( \sigma_U^2 \) is the variance of \( U_t \).
+- $\phi$ is an autoregressive parameter governing the temporal correlation of $U_t$.
+- $\eta$ is the strength of the correlation between $U_t$ and $X_{\mu}$.
+- $\sigma_U^2$ is the variance of $U_t$.
 
 ### Observation Equation
 
-The observed cases \( Y_t \) are related to the true cases \( C_t \) with observation error \( \epsilon_o \):
+The observed cases $Y_t^{\text{obs}}$ are related to the true cases $Y_t$ with observation error $\epsilon_o$:
 
-\[
-Y_t \mid C_t \sim \text{Poisson}(C_t e^{\epsilon_o})
-\]
+\begin{equation}
+Y_t^{\text{obs}} \mid Y_t \sim \text{Poisson}(Y_t e^{\epsilon_o})
+\end{equation}
 
-with \( \epsilon_o \sim \mathcal{N}(0, \sigma_o^2) \), where \( \sigma_o^2 \) is the variance of the observation error.
+with $\epsilon_o \sim \mathcal{N}(0, \sigma_o^2)$, where $\sigma_o^2$ is the variance of the observation error.
 
 ### Priors
 
 The priors for the parameters could be specified as follows:
 
-\[
-\alpha \sim \mathcal{N}(0, 10), \quad \beta_T \sim \mathcal{N}(0, 1), \quad \beta_V \sim \mathcal{N}(0, 1), \quad \gamma \sim \mathcal{N}(0, 1)
-\]
-\[
-\phi \sim \text{Uniform}(-1, 1), \quad \eta \sim \mathcal{N}(0, 1), \quad \sigma_U^2 \sim \text{Inverse-Gamma}(2, 1), \quad \sigma_o^2 \sim \text{Inverse-Gamma}(2, 1)
-\]
+\begin{subequations}
+\begin{align}
+\alpha &\sim \mathcal{N}(0, 10) \\ 
+\beta_{\mu} &\sim \mathcal{N}(0, 1) \\
+\beta_{\sigma} &\sim \mathcal{N}(0, 1) \\ 
+\gamma &\sim \mathcal{N}(0, 1)
+\end{align}
+\end{subequations}
 
-### Model Summary
-
-The Bayesian state space model can thus be summarized by:
-
-1. **State Equation for \( C_t \):**
-   \[
-   C_{t+1} \vert C_t, T_t, U_t \sim \text{Poisson} \left(C_t \exp \left( \alpha + \beta_T T_t + \beta_V V + \gamma U_t \right)\right)
-   \]
-
-2. **Latent Driver Process \( U_t \):**
-   \[
-   U_{t+1} \vert U_t, T_t \sim \mathcal{N}(\phi U_t + \eta T_t, \sigma_U^2)
-   \]
-
-3. **Observation Equation for \( Y_t \):**
-   \[
-   Y_t \vert C_t \sim \text{Poisson}(C_t e^{\epsilon_o})
-   \]
-   with \( \epsilon_o \sim \mathcal{N}(0, \sigma_o^2) \).
-
-This model structure accommodates both the observed temperature effects and an unobserved temporal driver, with observation noise on the actual reported cases.
+\begin{subequations}
+\begin{align}
+\phi &\sim \text{Uniform}(-1, 1) \\ 
+\eta &\sim \mathcal{N}(0, 1)  \\ 
+\sigma_U^2 &\sim \text{Inverse-Gamma}(2, 1) \\
+\sigma_o^2 &\sim \text{Inverse-Gamma}(2, 1) 
+\end{align}
+\end{subequations}
 
 

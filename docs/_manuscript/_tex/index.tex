@@ -169,85 +169,78 @@ variance (consistent through time) and mean temperature (increasing
 through time), as well as an unobserved driver that is correlated
 through time with the mean temperature.
 
-Let: - ( C\_t ) represent the true number of cases at time ( t ). - (
-Y\_t ) represent the observed number of cases at time ( t ), which
-includes observational error ( \epsilon\_o ). - ( T\_t ) represent the
-mean temperature at time ( t ), and let ( V ) represent the temperature
-variance, assumed constant over time. - ( U\_t ) represent the
-unobserved driver correlated with mean temperature ( T\_t ).
+Let: - \(Y_t\) represent the true number of cases at time \(t\). -
+\(Y_t^{\text{obs}}\) represent the observed number of cases at time
+\(t\), which includes observational error \(\epsilon_o\). - \(X_{\mu}\)
+represent the mean temperature at time \(t\), and let \(X_{\sigma}\)
+represent the temperature variance, assumed constant over time. -
+\(U_t\) represent the unobserved driver correlated with mean temperature
+\(X_{\mu}\).
 
 \subsection{State Process (Evolution)
 Equation}\label{state-process-evolution-equation}
 
-For the true cases ( C\_t ), we specify that the cases at time ( t+1 )
-are driven by the temperature effects and an unobserved driver ( U\_t )
+For the true cases \(Y_t\), we specify that the cases at time \(t+1\)
+are driven by the temperature effects and an unobserved driver \(U_t\)
 as follows:
 
-{[} C\_\{t+1\} \mid C\_t, T\_t, U\_t \sim \text{Poisson} \left(C\_t
-\exp \left( \alpha + \beta\_T T\_t + \beta\_V V + \gamma U\_t
-\right)\right) {]}
+\begin{equation}
+Y_{t+1} \mid Y_t, X_{\mu}, U_t \sim \text{Poisson} \left(Y_t \exp \left( \alpha + \beta_{\mu} X_{\mu} + \beta_{\sigma} X_{\sigma} + \gamma U_t \right)\right)
+\end{equation}
 
-where: - ( \alpha ) is an intercept term. - ( \beta\_T ) is the effect
-of mean temperature ( T\_t ) on the cases. - ( \beta\_V ) is the effect
-of temperature variance ( V ). - ( \gamma ) captures the effect of the
-unobserved driver ( U\_t ) on the cases.
+where: - \(\alpha\) is an intercept term. - \(\beta_{\mu}\) is the
+effect of mean temperature \(X_{\mu}\) on the cases. -
+\(\beta_{\sigma}\) is the effect of temperature variance \(X_{\sigma}\).
+- \(\gamma\) captures the effect of the unobserved driver \(U_t\) on the
+cases.
 
 \subsection{Latent Driver Process}\label{latent-driver-process}
 
-We assume that the unobserved driver ( U\_t ) has temporal correlation
+We assume that the unobserved driver \(U_t\) has temporal correlation
 and is influenced by the mean temperature:
 
-{[} U\_\{t+1\} \mid U\_t, T\_t \sim \mathcal{N}(\phi U\_t + \eta T\_t,
-\sigma\_U\^{}2) {]}
+\begin{equation}
+U_{t+1} \mid U_t, X_{\mu} \sim \mathcal{N}(\phi U_t + \eta X_{\mu}, \sigma_U^2)
+\end{equation}
 
-where: - ( \phi ) is an autoregressive parameter governing the temporal
-correlation of ( U\_t ). - ( \eta ) is the strength of the correlation
-between ( U\_t ) and ( T\_t ). - ( \sigma\_U\^{}2 ) is the variance of (
-U\_t ).
+where: - \(\phi\) is an autoregressive parameter governing the temporal
+correlation of \(U_t\). - \(\eta\) is the strength of the correlation
+between \(U_t\) and \(X_{\mu}\). - \(\sigma_U^2\) is the variance of
+\(U_t\).
 
 \subsection{Observation Equation}\label{observation-equation}
 
-The observed cases ( Y\_t ) are related to the true cases ( C\_t ) with
-observation error ( \epsilon\_o ):
+The observed cases \(Y_t^{\text{obs}}\) are related to the true cases
+\(Y_t\) with observation error \(\epsilon_o\):
 
-{[} Y\_t \mid C\_t \sim \text{Poisson}(C\_t e\^{}\{\epsilon\_o\}) {]}
+\begin{equation}
+Y_t^{\text{obs}} \mid Y_t \sim \text{Poisson}(Y_t e^{\epsilon_o})
+\end{equation}
 
-with ( \epsilon\_o \sim \mathcal{N}(0, \sigma\_o\^{}2) ), where (
-\sigma\_o\^{}2 ) is the variance of the observation error.
+with \(\epsilon_o \sim \mathcal{N}(0, \sigma_o^2)\), where
+\(\sigma_o^2\) is the variance of the observation error.
 
 \subsection{Priors}\label{priors}
 
 The priors for the parameters could be specified as follows:
 
-{[} \alpha \sim \mathcal{N}(0, 10), \quad \beta\_T \sim \mathcal{N}(0,
-1), \quad \beta\_V \sim \mathcal{N}(0, 1),
-\quad \gamma \sim \mathcal{N}(0, 1) {]} {[} \phi \sim \text{Uniform}(-1,
-1), \quad \eta \sim \mathcal{N}(0, 1), \quad \sigma\_U\^{}2
-\sim \text{Inverse-Gamma}(2, 1), \quad \sigma\_o\^{}2
-\sim \text{Inverse-Gamma}(2, 1) {]}
+\begin{subequations}
+\begin{align}
+\alpha &\sim \mathcal{N}(0, 10) \\ 
+\beta_{\mu} &\sim \mathcal{N}(0, 1) \\
+\beta_{\sigma} &\sim \mathcal{N}(0, 1) \\ 
+\gamma &\sim \mathcal{N}(0, 1)
+\end{align}
+\end{subequations}
 
-\subsection{Model Summary}\label{model-summary}
-
-The Bayesian state space model can thus be summarized by:
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\item
-  \textbf{State Equation for ( C\_t ):} {[} C\_\{t+1\} \vert C\_t, T\_t,
-  U\_t \sim \text{Poisson} \left(C\_t \exp \left( \alpha + \beta\_T T\_t
-  + \beta\_V V + \gamma U\_t \right)\right) {]}
-\item
-  \textbf{Latent Driver Process ( U\_t ):} {[} U\_\{t+1\} \vert U\_t,
-  T\_t \sim \mathcal{N}(\phi U\_t + \eta T\_t, \sigma\_U\^{}2) {]}
-\item
-  \textbf{Observation Equation for ( Y\_t ):} {[} Y\_t \vert C\_t
-  \sim \text{Poisson}(C\_t e\^{}\{\epsilon\_o\}) {]} with ( \epsilon\_o
-  \sim \mathcal{N}(0, \sigma\_o\^{}2) ).
-\end{enumerate}
-
-This model structure accommodates both the observed temperature effects
-and an unobserved temporal driver, with observation noise on the actual
-reported cases.
+\begin{subequations}
+\begin{align}
+\phi &\sim \text{Uniform}(-1, 1) \\ 
+\eta &\sim \mathcal{N}(0, 1)  \\ 
+\sigma_U^2 &\sim \text{Inverse-Gamma}(2, 1) \\
+\sigma_o^2 &\sim \text{Inverse-Gamma}(2, 1) 
+\end{align}
+\end{subequations}
 
 
 

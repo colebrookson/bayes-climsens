@@ -1,0 +1,305 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Wolfram 14.1' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       154,          7]
+NotebookDataLength[     11877,        295]
+NotebookOptionsPosition[     10534,        269]
+NotebookOutlinePosition[     10925,        285]
+CellTagsIndexPosition[     10882,        282]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", 
+   RowBox[{
+   "Define", " ", "model", " ", "parameters", " ", "and", " ", "priors"}], 
+   "*)"}], 
+  RowBox[{
+   RowBox[{
+    RowBox[{"params", "=", 
+     RowBox[{"{", 
+      RowBox[{
+      "alpha", ",", "betaMu", ",", "betaSigma", ",", "gamma", ",", "phi", ",",
+        "eta", ",", "sigmaU", ",", "sigmaO"}], "}"}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{"priors", "=", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"alpha", "\[Distributed]", 
+        RowBox[{"NormalDistribution", "[", 
+         RowBox[{"0", ",", "10"}], "]"}]}], ",", 
+       RowBox[{"betaMu", "\[Distributed]", 
+        RowBox[{"NormalDistribution", "[", 
+         RowBox[{"0", ",", "1"}], "]"}]}], ",", 
+       RowBox[{"betaSigma", "\[Distributed]", 
+        RowBox[{"NormalDistribution", "[", 
+         RowBox[{"0", ",", "1"}], "]"}]}], ",", 
+       RowBox[{"gamma", "\[Distributed]", 
+        RowBox[{"NormalDistribution", "[", 
+         RowBox[{"0", ",", "1"}], "]"}]}]}], "}"}]}], ";"}], 
+   "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+    "Define", " ", "Poisson", " ", "likelihood", " ", "using", " ", "PDF"}], 
+    "*)"}], 
+   RowBox[{
+    RowBox[{"likelihood", "=", 
+     RowBox[{"Product", "[", 
+      RowBox[{
+       RowBox[{"PDF", "[", 
+        RowBox[{
+         RowBox[{"PoissonDistribution", "[", 
+          RowBox[{
+           RowBox[{"Yt", "[", "t", "]"}], " ", 
+           RowBox[{"Exp", "[", 
+            RowBox[{"alpha", "+", 
+             RowBox[{"betaMu", "*", "Xmu"}], "+", 
+             RowBox[{"betaSigma", "*", "Xsigma"}], "+", 
+             RowBox[{"gamma", "*", 
+              RowBox[{"Ut", "[", "t", "]"}]}]}], "]"}]}], "]"}], ",", 
+         RowBox[{"Yt", "[", 
+          RowBox[{"t", "+", "1"}], "]"}]}], "]"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"t", ",", "1", ",", "T"}], "}"}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{"Full", " ", "joint", " ", "distribution"}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{"jointDist", "=", 
+     RowBox[{
+      RowBox[{"Times", "@@", "priors"}], "*", "likelihood"}]}], ";"}], 
+   "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"Marginalize", " ", "jointDist", " ", "for", " ", "alpha"}], 
+      "\[CloseCurlyQuote]"}], "s", " ", "conditional", " ", "by", " ", 
+     "simplifying", " ", "terms"}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{"alphaConditional", "=", 
+     RowBox[{"Simplify", "[", 
+      RowBox[{"jointDist", "/.", " ", 
+       RowBox[{"Table", "[", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"params", "[", 
+           RowBox[{"[", "i", "]"}], "]"}], "->", 
+          RowBox[{"RandomVariate", "[", 
+           RowBox[{"NormalDistribution", "[", 
+            RowBox[{"0", ",", "1"}], "]"}], "]"}]}], ",", 
+         RowBox[{"{", 
+          RowBox[{"i", ",", "2", ",", 
+           RowBox[{"Length", "[", "params", "]"}]}], "}"}]}], "]"}]}], 
+      "]"}]}], ";"}], "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+    "Check", " ", "if", " ", "it", " ", "can", " ", "be", " ", "simplified", 
+     " ", "to", " ", "a", " ", "known", " ", "form", " ", "using", " ", 
+     "DistributionFitTest"}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{"distForm", "=", 
+     RowBox[{"NormalDistribution", "[", 
+      RowBox[{"mean", ",", "variance"}], "]"}]}], ";"}], "\n", 
+   RowBox[{
+    RowBox[{"isNormal", "=", 
+     RowBox[{"DistributionFitTest", "[", 
+      RowBox[{"alphaConditional", ",", "distForm"}], "]"}]}], ";"}], "\n", 
+   RowBox[{"If", "[", 
+    RowBox[{
+     RowBox[{"isNormal", "===", "True"}], ",", 
+     "\"\<Conditional has a closed normal form\>\"", ",", 
+     "\"\<Conditional likely has no closed form\>\""}], "]"}], 
+   "\n"}]}]], "Input",
+ CellChangeTimes->{{3.940504583748887*^9, 3.940504583750148*^9}, {
+  3.940504665199338*^9, 
+  3.940504672917935*^9}},ExpressionUUID->"ef71989f-9fb4-4a59-b5d5-\
+b8fd5cdac559"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "PoissonDistribution", "argx", 
+   "\"\\!\\(\\*RowBox[{\\\"PoissonDistribution\\\"}]\\) called with \
+\\!\\(\\*RowBox[{\\\"2\\\"}]\\) arguments; 1 argument is expected.\"", 2, 3, 
+   1, 24453120463274497083, "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{3.940504611028604*^9},
+ CellLabel->
+  "During evaluation of \
+In[1]:=",ExpressionUUID->"e3926407-f01e-4a12-87e2-da36a4ad0e77"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "PoissonDistribution", "argx", 
+   "\"\\!\\(\\*RowBox[{\\\"PoissonDistribution\\\"}]\\) called with \
+\\!\\(\\*RowBox[{\\\"2\\\"}]\\) arguments; 1 argument is expected.\"", 2, 3, 
+   2, 24453120463274497083, "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{3.940504611035454*^9},
+ CellLabel->
+  "During evaluation of \
+In[1]:=",ExpressionUUID->"2d9b6d9d-04c6-4cd1-9341-4bb403c68e6e"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "PoissonDistribution", "argx", 
+   "\"\\!\\(\\*RowBox[{\\\"PoissonDistribution\\\"}]\\) called with \
+\\!\\(\\*RowBox[{\\\"2\\\"}]\\) arguments; 1 argument is expected.\"", 2, 3, 
+   3, 24453120463274497083, "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{3.9405046110916243`*^9},
+ CellLabel->
+  "During evaluation of \
+In[1]:=",ExpressionUUID->"8d9572d7-321b-4606-96ae-64bf778f7736"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "General", "stop", 
+   "\"Further output of \
+\\!\\(\\*StyleBox[RowBox[{\\\"PoissonDistribution\\\", \\\"::\\\", \\\"argx\\\
+\"}], \\\"MessageName\\\"]\\) will be suppressed during this calculation.\"", 
+   2, 3, 4, 24453120463274497083, "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{3.940504611093955*^9},
+ CellLabel->
+  "During evaluation of \
+In[1]:=",ExpressionUUID->"d87994da-4147-4f8c-a57d-4129b2207790"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "PoissonDistribution", "argx", 
+   "\"\\!\\(\\*RowBox[{\\\"PoissonDistribution\\\"}]\\) called with \
+\\!\\(\\*RowBox[{\\\"2\\\"}]\\) arguments; 1 argument is expected.\"", 2, 5, 
+   5, 24453120463274497083, "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{3.940504611133234*^9},
+ CellLabel->
+  "During evaluation of \
+In[1]:=",ExpressionUUID->"bea06ca4-8920-4a23-a69d-011cbc6a2a6a"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "PoissonDistribution", "argx", 
+   "\"\\!\\(\\*RowBox[{\\\"PoissonDistribution\\\"}]\\) called with \
+\\!\\(\\*RowBox[{\\\"2\\\"}]\\) arguments; 1 argument is expected.\"", 2, 5, 
+   6, 24453120463274497083, "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{3.940504611135447*^9},
+ CellLabel->
+  "During evaluation of \
+In[1]:=",ExpressionUUID->"0377b2a0-1075-4ef7-9e0a-316a9d5ec433"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "PoissonDistribution", "argx", 
+   "\"\\!\\(\\*RowBox[{\\\"PoissonDistribution\\\"}]\\) called with \
+\\!\\(\\*RowBox[{\\\"2\\\"}]\\) arguments; 1 argument is expected.\"", 2, 5, 
+   7, 24453120463274497083, "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{3.940504611136971*^9},
+ CellLabel->
+  "During evaluation of \
+In[1]:=",ExpressionUUID->"b816be0f-24e7-42db-bfc6-3d1105d7b2c2"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "General", "stop", 
+   "\"Further output of \
+\\!\\(\\*StyleBox[RowBox[{\\\"PoissonDistribution\\\", \\\"::\\\", \\\"argx\\\
+\"}], \\\"MessageName\\\"]\\) will be suppressed during this calculation.\"", 
+   2, 5, 8, 24453120463274497083, "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{3.94050461113863*^9},
+ CellLabel->
+  "During evaluation of \
+In[1]:=",ExpressionUUID->"2faab4b4-9e9c-48d2-8376-75269f619db0"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "DistributionFitTest", "rctnln", 
+   "\"The argument \\!\\(\\*RowBox[{RowBox[{\\\"(\\\", \
+RowBox[{RowBox[{\\\"-\\\", \\\"0.8984081081923807`\\\"}], \
+\\\"\[Distributed]\\\", RowBox[{\\\"NormalDistribution\\\", \\\"[\\\", \
+RowBox[{\\\"0\\\", \\\",\\\", \\\"1\\\"}], \\\"]\\\"}]}], \\\")\\\"}], \\\" \
+\\\", RowBox[{\\\"(\\\", RowBox[{RowBox[{\\\"-\\\", \
+\\\"0.844111763135297`\\\"}], \\\"\[Distributed]\\\", \
+RowBox[{\\\"NormalDistribution\\\", \\\"[\\\", RowBox[{\\\"0\\\", \\\",\\\", \
+\\\"1\\\"}], \\\"]\\\"}]}], \\\")\\\"}], \\\" \\\", RowBox[{\\\"(\\\", \
+RowBox[{\\\"1.313842893159065`\\\", \\\"\[Distributed]\\\", \
+RowBox[{\\\"NormalDistribution\\\", \\\"[\\\", RowBox[{\\\"0\\\", \\\",\\\", \
+\\\"1\\\"}], \\\"]\\\"}]}], \\\")\\\"}], \\\" \\\", RowBox[{\\\"(\\\", \
+RowBox[{\\\"alpha\\\", \\\"\[Distributed]\\\", RowBox[{\\\"NormalDistribution\
+\\\", \\\"[\\\", RowBox[{\\\"0\\\", \\\",\\\", \\\"10\\\"}], \\\"]\\\"}]}], \
+\\\")\\\"}], \\\" \\\", RowBox[{UnderoverscriptBox[\\\"\[Product]\\\", \
+RowBox[{\\\"t\\\", \\\"=\\\", \\\"1\\\"}], \\\"T\\\"], \
+RowBox[{\\\"PoissonDistribution\\\", \\\"[\\\", RowBox[{RowBox[{\\\"Yt\\\", \
+\\\"[\\\", RowBox[{\\\"1\\\", \\\"+\\\", \\\"t\\\"}], \\\"]\\\"}], \\\",\\\", \
+RowBox[{SuperscriptBox[\\\"\[ExponentialE]\\\", RowBox[{\\\"alpha\\\", \
+\\\"-\\\", RowBox[{\\\"0.844111763135297`\\\", \\\" \\\", \\\"Xmu\\\"}], \
+\\\"+\\\", RowBox[{\\\"1.313842893159065`\\\", \\\" \\\", \\\"Xsigma\\\"}], \
+\\\"-\\\", RowBox[{\\\"0.8984081081923807`\\\", \\\" \\\", \
+RowBox[{\\\"Ut\\\", \\\"[\\\", RowBox[{\\\"\[LeftSkeleton]\\\", \\\"1\\\", \\\
+\"\[RightSkeleton]\\\"}], \\\"]\\\"}]}]}]], \\\" \\\", RowBox[{\\\"Yt\\\", \\\
+\"[\\\", \\\"t\\\", \\\"]\\\"}]}]}], \\\"]\\\"}]}]}]\\) at position \
+\\!\\(\\*RowBox[{\\\"1\\\"}]\\) should be a rectangular array of real numbers \
+with length greater than the dimension of the array.\"", 2, 7, 9, 
+   24453120463274497083, "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{3.940504611196206*^9},
+ CellLabel->
+  "During evaluation of \
+In[1]:=",ExpressionUUID->"c72595e3-7fab-4dd9-94b3-7d28830636b1"],
+
+Cell[BoxData["\<\"Conditional likely has no closed form\"\>"], "Output",
+ CellChangeTimes->{3.940504611201641*^9},
+ CellLabel->"Out[8]=",ExpressionUUID->"8c6a594a-cbbb-498e-a5bd-3b03e7d4afd1"]
+}, Open  ]]
+},
+WindowSize->{808, 873},
+WindowMargins->{{4, Automatic}, {Automatic, 4}},
+FrontEndVersion->"14.1 for Mac OS X ARM (64-bit) (July 16, 2024)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"de9d09e0-06ff-40ad-bf80-06bfaa60b090"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[576, 22, 4042, 106, 560, "Input",ExpressionUUID->"ef71989f-9fb4-4a59-b5d5-b8fd5cdac559"],
+Cell[4621, 130, 435, 10, 26, "Message",ExpressionUUID->"e3926407-f01e-4a12-87e2-da36a4ad0e77"],
+Cell[5059, 142, 435, 10, 26, "Message",ExpressionUUID->"2d9b6d9d-04c6-4cd1-9341-4bb403c68e6e"],
+Cell[5497, 154, 437, 10, 26, "Message",ExpressionUUID->"8d9572d7-321b-4606-96ae-64bf778f7736"],
+Cell[5937, 166, 465, 11, 26, "Message",ExpressionUUID->"d87994da-4147-4f8c-a57d-4129b2207790"],
+Cell[6405, 179, 435, 10, 26, "Message",ExpressionUUID->"bea06ca4-8920-4a23-a69d-011cbc6a2a6a"],
+Cell[6843, 191, 435, 10, 26, "Message",ExpressionUUID->"0377b2a0-1075-4ef7-9e0a-316a9d5ec433"],
+Cell[7281, 203, 435, 10, 26, "Message",ExpressionUUID->"b816be0f-24e7-42db-bfc6-3d1105d7b2c2"],
+Cell[7719, 215, 464, 11, 26, "Message",ExpressionUUID->"2faab4b4-9e9c-48d2-8376-75269f619db0"],
+Cell[8186, 228, 2137, 34, 106, "Message",ExpressionUUID->"c72595e3-7fab-4dd9-94b3-7d28830636b1"],
+Cell[10326, 264, 192, 2, 33, "Output",ExpressionUUID->"8c6a594a-cbbb-498e-a5bd-3b03e7d4afd1"]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)
+
