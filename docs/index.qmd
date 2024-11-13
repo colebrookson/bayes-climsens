@@ -62,6 +62,40 @@ Y_t^{\text{obs}} \mid Y_t \sim \text{Poisson}(Y_t e^{\epsilon_o})
 
 with $\epsilon_o \sim \mathcal{N}(0, \sigma_o^2)$, where $\sigma_o^2$ is the variance of the observation error.
 
+<!-- ```{dot}
+digraph G {
+    // Define nodes
+    Y_t [label="Y_t (Observed Cases)", shape=ellipse]
+    Y_t_obs [label="Y_t^{obs} (Observed Data)", shape=ellipse]
+    Y_t_plus_1 [label="Y_{t+1} (Next Obs. Case)", shape=ellipse]
+    X_mu [label="X_{\\mu} (Mean Temp.)", shape=ellipse]
+    X_sigma [label="X_{\\sigma} (Temp. Variance)", shape=ellipse]
+    U_t [label="U_t (Unobserved Driver)", shape=ellipse]
+    alpha [label="\\alpha (Parameter)", shape=rectangle]
+    beta_mu [label="\\beta_{\\mu} (Parameter)", shape=rectangle]
+    beta_sigma [label="\\beta_{\\sigma} (Parameter)", shape=rectangle]
+    gamma [label="\\gamma (Parameter)", shape=rectangle]
+    epsilon_o [label="\\epsilon_o (Observation Error)", shape=ellipse]
+    
+    // Define edges
+    Y_t_plus_1 -> Y_t [label="State Process (Poisson)"]
+    Y_t -> Y_t_plus_1 [label="Transition"]
+    Y_t_obs -> Y_t [label="Observation"]
+    Y_t -> X_mu [label="Dependent on Mean Temp."]
+    Y_t -> X_sigma [label="Dependent on Temp. Variance"]
+    Y_t -> U_t [label="Dependent on Unobserved Driver"]
+    Y_t_plus_1 -> X_mu [label="Dependent on X_{\\mu}"]
+    Y_t_plus_1 -> X_sigma [label="Dependent on X_{\\sigma}"]
+    Y_t_plus_1 -> U_t [label="Dependent on U_t"]
+    X_mu -> alpha [label="Parameter Influence"]
+    X_sigma -> beta_sigma [label="Parameter Influence"]
+    U_t -> gamma [label="Parameter Influence"]
+    
+    // Optional: Customizing style
+    node [style=filled, fillcolor=lightblue]
+}
+``` -->
+
 ### Priors
 
 The priors for the parameters could be specified as follows:
@@ -83,5 +117,183 @@ The priors for the parameters could be specified as follows:
 \sigma_o^2 &\sim \text{Inverse-Gamma}(2, 1) 
 \end{align}
 \end{subequations}
+
+
+### Full Conditional Derivations
+
+#### 1. Full Conditional for $Y_t$
+
+The likelihood for $Y_t$ comes from the Poisson model and the observation model:
+
+\begin{equation}
+Y_{t+1} \mid Y_t, X_{\mu}, U_t \sim \text{Poisson}\left( Y_t \exp(\alpha + \beta_{\mu} X_{\mu} + \beta_{\sigma} X_{\sigma} + \gamma U_t) \right)
+\end{equation}
+
+\begin{equation}
+Y_t^{\text{obs}} \mid Y_t \sim \text{Poisson}(Y_t e^{\epsilon_o})
+\end{equation}
+
+The joint likelihood is:
+
+\begin{equation}
+\begin{split}
+p(Y_t \mid Y_{t+1}, Y_t^{\text{obs}}, \alpha, \beta_{\mu}, \beta_{\sigma}, \gamma, U_t, \epsilon_o) & \propto \text{Poisson}(Y_{t+1} \mid Y_t \exp(\alpha + \beta_{\mu} X_{\mu} + \beta_{\sigma} X_{\sigma} + \gamma U_t)) \times \\ 
+& \text{Poisson}(Y_t^{\text{obs}} \mid Y_t e^{\epsilon_o})
+\end{split}
+\end{equation}
+
+Simplifying this:
+
+\begin{equation}
+\begin{split}
+p(Y_t \mid Y_{t+1}, Y_t^{\text{obs}}, \alpha, \beta_{\mu}, \beta_{\sigma}, \gamma, U_t, \epsilon_o) & \propto \exp\left(-Y_t \exp(\alpha + \beta_{\mu} X_{\mu} + \beta_{\sigma} X_{\sigma} + \gamma U_t)\right) \\
+& \left(Y_t \exp(\alpha + \beta_{\mu} X_{\mu} + \beta_{\sigma} X_{\sigma} + \gamma U_t)\right)^{Y_{t+1}} \times \\ 
+& \exp\left(-Y_t e^{\epsilon_o}\right) \left(Y_t e^{\epsilon_o}\right)^{Y_t^{\text{obs}}}
+\end{split}
+\end{equation}
+
+This simplifies to:
+
+\begin{equation}
+\begin{split}
+p(Y_t \mid Y_{t+1}, Y_t^{\text{obs}}, \alpha, \beta_{\mu}, \beta_{\sigma}, \gamma, U_t, \epsilon_o)  & \propto Y_t^{Y_{t+1} + Y_t^{\text{obs}}} \times \\
+& \exp\left( -Y_t \left( \exp(\alpha + \beta_{\mu} X_{\mu} + \beta_{\sigma} X_{\sigma} + \gamma U_t) + e^{\epsilon_o} \right) \right)
+\end{split}
+\end{equation}
+
+This is proportional to a Gamma distribution with shape $Y_{t+1} + Y_t^{\text{obs}}$ and rate $\exp(\alpha + \beta_{\mu} X_{\mu} + \beta_{\sigma} X_{\sigma} + \gamma U_t) + e^{\epsilon_o}$. Therefore, the full conditional for $Y_t$ is Gamma-distributed, and there is a closed-form solution.
+
+#### 2. Full Conditional for $U_t$
+
+The likelihood for $U_t$ comes from the Normal distribution and the Poisson likelihood for $Y_{t+1}$:
+
+\begin{equation}
+U_{t+1} \mid U_t, X_{\mu} \sim \mathcal{N}(\phi U_t + \eta X_{\mu}, \sigma_U^2)
+\end{equation}
+
+\begin{equation}
+Y_{t+1} \mid Y_t, U_t \sim \text{Poisson}(Y_t \exp(\alpha + \beta_{\mu} X_{\mu} + \beta_{\sigma} X_{\sigma} + \gamma U_t))
+\end{equation}
+
+The joint likelihood is:
+
+\begin{equation}
+\begin{split}
+p(U_t \mid U_{t+1}, Y_{t+1}, Y_t, \alpha, \beta_{\mu}, \beta_{\sigma}, \gamma, X_{\mu}, \sigma_U^2) & \propto \\
+& \mathcal{N}(U_{t+1} \mid \phi U_t + \eta X_{\mu}, \sigma_U^2) \times \\
+& \text{Poisson}(Y_{t+1} \mid Y_t \exp(\alpha + \beta_{\mu} X_{\mu} + \beta_{\sigma} X_{\sigma} + \gamma U_t))
+\end{split}
+\end{equation}
+
+Substituting the likelihoods:
+
+\begin{equation}
+\begin{split}
+p(U_t \mid U_{t+1}, Y_{t+1}, Y_t, \alpha, \beta_{\mu}, \beta_{\sigma}, \gamma, X_{\mu}, \sigma_U^2) &\propto \\
+& \exp\left( -\frac{(U_{t+1} - (\phi U_t + \eta X_{\mu}))^2}{2 \sigma_U^2} \right) \times \\
+& \exp\left( -Y_t \exp(\alpha + \beta_{\mu} X_{\mu} + \beta_{\sigma} X_{\sigma} + \gamma U_t) \right)
+\end{split}
+\end{equation}
+
+This is a mixture of Gaussian and Poisson terms, which does not have a closed-form solution. Numerical methods such as Metropolis-Hastings would be used for approximation.
+
+#### 3. Full Conditional for $\alpha$
+
+The prior for $\alpha$ is $\mathcal{N}(0, 10)$, and the full conditional is:
+
+\begin{equation}
+p(\alpha \mid Y, X_{\mu}, X_{\sigma}, U) \propto \mathcal{N}(0, 10) \times \prod_{t=1}^{T} \text{Poisson}(Y_{t+1} \mid Y_t \exp(\alpha + \beta_{\mu} X_{\mu} + \beta_{\sigma} X_{\sigma} + \gamma U_t))
+\end{equation}
+
+Substituting the Poisson likelihood:
+
+\begin{equation}
+p(\alpha \mid Y, X_{\mu}, X_{\sigma}, U) \propto \exp\left( -\frac{\alpha^2}{2 \cdot 10^2} \right) \times \prod_{t=1}^{T} \exp\left( -Y_t \exp(\alpha + \beta_{\mu} X_{\mu} + \beta_{\sigma} X_{\sigma} + \gamma U_t) \right)
+\end{equation}
+
+This simplifies to:
+
+\begin{equation}
+p(\alpha \mid Y, X_{\mu}, X_{\sigma}, U) \propto \exp\left( -\frac{\alpha^2}{2 \cdot 10^2} - \sum_{t=1}^{T} Y_t \exp(\alpha + \beta_{\mu} X_{\mu} + \beta_{\sigma} X_{\sigma} + \gamma U_t) \right)
+\end{equation}
+
+This is a Gaussian-exponential mixture, and there is no closed-form solution. Approximation methods (e.g., numerical optimization) would be needed.
+
+#### 4. Full Conditional for $\beta_{\mu}$
+
+The prior for $\beta_{\mu}$ is $\mathcal{N}(0, 1)$, and the full conditional is:
+
+\begin{equation}
+p(\beta_{\mu} \mid Y, X_{\mu}, X_{\sigma}, U) \propto \mathcal{N}(0, 1) \times \prod_{t=1}^{T} \text{Poisson}(Y_{t+1} \mid Y_t \exp(\alpha + \beta_{\mu} X_{\mu} + \beta_{\sigma} X_{\sigma} + \gamma U_t))
+\end{equation}
+
+Substituting the Poisson likelihood:
+
+\begin{equation}
+p(\beta_{\mu} \mid Y, X_{\mu}, X_{\sigma}, U) \propto \exp\left( -\frac{\beta_{\mu}^2}{2} \right) \times \prod_{t=1}^{T} \exp\left( -Y_t \exp(\alpha + \beta_{\mu} X_{\mu} + \beta_{\sigma} X_{\sigma} + \gamma U_t) \right)
+\end{equation}
+
+This leads to a Gaussian-exponential mixture, which does not have a closed-form solution.
+
+#### 5. Full Conditional for $\beta_{\sigma}$
+
+The full conditional for $\beta_{\sigma}$ follows the same structure as for $\beta_{\mu}$:
+
+\begin{equation}
+p(\beta_{\sigma} \mid Y, X_{\mu}, X_{\sigma}, U) \propto \mathcal{N}(0, 1) \times \prod_{t=1}^{T} \text{Poisson}(Y_{t+1} \mid Y_t \exp(\alpha + \beta_{\mu} X_{\mu} + \beta_{\sigma} X_{\sigma} + \gamma U_t))
+\end{equation}
+
+This does not have a closed-form solution either.
+
+#### 6. Full Conditional for $\gamma$
+
+The full conditional for $\gamma$ is:
+
+\begin{equation}
+p(\gamma \mid Y, X_{\mu}, X_{\sigma}, U) \propto \mathcal{N}(0, 1) \times \prod_{t=1}^{T} \text{Poisson}(Y_{t+1} \mid Y_t \exp(\alpha + \beta_{\mu} X_{\mu} + \beta_{\sigma} X_{\sigma} + \gamma U_t))
+\end{equation}
+
+This does not have a closed-form solution.
+
+#### 7. Full Conditional for $\phi$
+
+The prior for $\phi$ is $\text{Uniform}(-1, 1)$, and the full conditional is:
+
+\begin{equation}
+p(\phi \mid U, X_{\mu}) \propto \text{Uniform}(-1, 1) \times \prod_{t=1}^{T} \mathcal{N}(U_{t+1} \mid \phi U_t + \eta X_{\mu}, \sigma_U^2)
+\end{equation}
+
+This is a product of Gaussian distributions. The full conditional does not have a closed-form solution but can be approximated numerically.
+
+#### 8. Full Conditional for $\eta$
+
+Similarly, for $\eta$:
+
+\begin{equation}
+p(\eta \mid U, X_{\mu}) \propto \mathcal{N}(0, 1) \times \prod_{t=1}^{T} \mathcal{N}(U_{t+1} \mid \phi U_t + \eta X_{\mu}, \sigma_U^2)
+\end{equation}
+
+This is a Gaussian-exponential mixture, and no closed-form solution exists.
+
+#### 9. Full Conditional for $\sigma_U^2$
+
+For $\sigma_U^2$, the prior is $\text{Inverse-Gamma}(2, 1)$, and the full conditional is:
+
+\begin{equation}
+p(\sigma_U^2 \mid U, X_{\mu}, \phi, \eta) \propto \text{Inverse-Gamma}(2, 1) \times \prod_{t=1}^{T} \mathcal{N}(U_{t+1} \mid \phi U_t + \eta X_{\mu}, \sigma_U^2)
+\end{equation}
+
+The full conditional is an **Inverse-Gamma distribution** with updated shape and rate parameters. This has a **closed-form solution**.
+
+#### 10. Full Conditional for $\sigma_o^2$
+
+For $\sigma_o^2$, the prior is $\text{Inverse-Gamma}(2, 1)$, and the full conditional is:
+
+\begin{equation}
+p(\sigma_o^2 \mid Y^{\text{obs}}, Y) \propto \text{Inverse-Gamma}(2, 1) \times \prod_{t=1}^{T} \mathcal{N}(\log(Y_t^{\text{obs}} / Y_t) \mid 0, \sigma_o^2)
+\end{equation}
+
+This conditional is also **Inverse-Gamma** with parameters updated based on the data. Hence, it has a **closed-form solution**.
+
 
 
