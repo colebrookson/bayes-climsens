@@ -152,11 +152,11 @@
 \section{Motivating Question}\label{motivating-question}
 
 If climate change (through some sort of variable such as temperature or
-precipitation) is affecting the number of cases of infectious diseasse,
+precipitation) is affecting the number of cases of infectious disease,
 it is an outstanding question how strong this effect must be to identify
-it from some background autocorrelated value.
-
-How strong does the signal of climate change need to be to detect it?
+it from some background autocorrelated value. It is worth asking how
+correlated a confounding background process can be before we cannot
+recover a value of interest.
 
 \section{Data \& model}\label{data-model}
 
@@ -167,58 +167,26 @@ themselves are now given as a state space model where the number of
 cases at time \(t+1\) are driven by the effect of both temperature
 variance (consistent through time) and mean temperature (increasing
 through time), as well as an unobserved driver that is correlated
-through time with the mean temperature.
+through time with the mean temperature. We can simplify this for a first
+pass and assume that there's no error in measurement. With this, then we
+say:
 
-Let: - \(Y_t\) represent the true number of cases at time \(t\). -
-\(Y_t^{\text{obs}}\) represent the observed number of cases at time
-\(t\), which includes observational error \(\epsilon_o\). - \(X_{\mu}\)
-represent the mean temperature at time \(t\), and let \(X_{\sigma}\)
-represent the temperature variance, assumed constant over time. -
-\(U_t\) represent the unobserved driver correlated with mean temperature
-\(X_{\mu}\).
+Let:
 
-\subsection{State Process (Evolution)
-Equation}\label{state-process-evolution-equation}
+\begin{itemize}
+\tightlist
+\item
+  \(Y_t\) represent the number of cases at time \(t\).
+\item
+  \(X_{\mu}\) represent the mean temperature at time \(t\), and let
+  \(X_{\sigma}\) represent the temperature variance, assumed constant
+  over time.
+\item
+  \(U_t\) represent the unobserved driver correlated with mean
+  temperature \(X_{\mu}\).
+\end{itemize}
 
-For the true cases \(Y_t\), we specify that the cases at time \(t+1\)
-are driven by the temperature effects and an unobserved driver \(U_t\)
-as follows:
-
-\begin{equation}
-Y_{t+1} \mid Y_t, X_{\mu}, U_t \sim \text{Poisson} \left(Y_t \exp \left( \alpha + \beta_{\mu} X_{\mu} + \beta_{\sigma} X_{\sigma} + \gamma U_t \right)\right)
-\end{equation}
-
-where: - \(\alpha\) is an intercept term. - \(\beta_{\mu}\) is the
-effect of mean temperature \(X_{\mu}\) on the cases. -
-\(\beta_{\sigma}\) is the effect of temperature variance \(X_{\sigma}\).
-- \(\gamma\) captures the effect of the unobserved driver \(U_t\) on the
-cases.
-
-\subsection{Latent Driver Process}\label{latent-driver-process}
-
-We assume that the unobserved driver \(U_t\) has temporal correlation
-and is influenced by the mean temperature:
-
-\begin{equation}
-U_{t+1} \mid U_t, X_{\mu} \sim \mathcal{N}(\phi U_t + \eta X_{\mu}, \sigma_U^2)
-\end{equation}
-
-where: - \(\phi\) is an autoregressive parameter governing the temporal
-correlation of \(U_t\). - \(\eta\) is the strength of the correlation
-between \(U_t\) and \(X_{\mu}\). - \(\sigma_U^2\) is the variance of
-\(U_t\).
-
-\subsection{Observation Equation}\label{observation-equation}
-
-The observed cases \(Y_t^{\text{obs}}\) are related to the true cases
-\(Y_t\) with observation error \(\epsilon_o\):
-
-\begin{equation}
-Y_t^{\text{obs}} \mid Y_t \sim \text{Poisson}(Y_t e^{\epsilon_o})
-\end{equation}
-
-with \(\epsilon_o \sim \mathcal{N}(0, \sigma_o^2)\), where
-\(\sigma_o^2\) is the variance of the observation error.
+\subsection{Model Equation}\label{model-equation}
 
 \subsection{Priors}\label{priors}
 

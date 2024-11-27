@@ -11,90 +11,24 @@ bibliography: bayes-climsens.bib
 
 ## Motivating Question 
 
-If climate change (through some sort of variable such as temperature or precipitation) is affecting the number of cases of infectious diseasse, it is an outstanding question how strong this effect must be to identify it from some background autocorrelated value. 
-
-How strong does the signal of climate change need to be to detect it? 
+If climate change (through some sort of variable such as temperature or precipitation) is affecting the number of cases of infectious disease, it is an outstanding question how strong this effect must be to identify it from some background autocorrelated value. It is worth asking how correlated a confounding background process can be before we cannot recover a value of interest. 
 
 ## Data & model 
 
-Assuming we have some data on observed cases of a given infectious disease. The relationship between those observed cases and actual cases is a state process with some observation error, $\epsilon_o$. Cases themselves are now given as a state space model where the number of cases at time $t+1$ are driven by the effect of both temperature variance (consistent through time) and mean temperature (increasing through time), as well as an unobserved driver that is correlated through time with the mean temperature. 
+Assuming we have some data on observed cases of a given infectious disease. The relationship between those observed cases and actual cases is a state process with some observation error, $\epsilon_o$. Cases themselves are now given as a state space model where the number of cases at time $t+1$ are driven by the effect of both temperature variance (consistent through time) and mean temperature (increasing through time), as well as an unobserved driver that is correlated through time with the mean temperature. We can simplify this for a first pass and assume that there's no error in measurement. With this, then we say: 
 
 Let:
-- $Y_t$ represent the true number of cases at time $t$.
-- $Y_t^{\text{obs}}$ represent the observed number of cases at time $t$, which includes observational error $\epsilon_o$.
-- $X_{\mu}$ represent the mean temperature at time $t$, and let $X_{\sigma}$ represent the temperature variance, assumed constant over time.
-- $U_t$ represent the unobserved driver correlated with mean temperature $X_{\mu}$.
 
-### State Process (Evolution) Equation
+* $Y_t$ represent the number of cases at time $t$.
+* $X_{\mu}$ represent the mean temperature at time $t$, and let $X_{\sigma}$ represent the temperature variance, assumed constant over time.
+* $U_t$ represent the unobserved driver correlated with mean temperature $X_{\mu}$.
 
-For the true cases $Y_t$, we specify that the cases at time $t+1$ are driven by the temperature effects and an unobserved driver $U_t$ as follows:
+### Model Equation
 
-\begin{equation}
-Y_{t+1} \mid Y_t, X_{\mu}, U_t \sim \text{Poisson} \left(Y_t \exp \left( \alpha + \beta_{\mu} X_{\mu} + \beta_{\sigma} X_{\sigma} + \gamma U_t \right)\right)
-\end{equation}
 
-where:
-- $\alpha$ is an intercept term.
-- $\beta_{\mu}$ is the effect of mean temperature $X_{\mu}$ on the cases.
-- $\beta_{\sigma}$ is the effect of temperature variance $X_{\sigma}$.
-- $\gamma$ captures the effect of the unobserved driver $U_t$ on the cases.
 
-### Latent Driver Process
 
-We assume that the unobserved driver $U_t$ has temporal correlation and is influenced by the mean temperature:
 
-\begin{equation}
-U_{t+1} \mid U_t, X_{\mu} \sim \mathcal{N}(\phi U_t + \eta X_{\mu}, \sigma_U^2)
-\end{equation}
-
-where:
-- $\phi$ is an autoregressive parameter governing the temporal correlation of $U_t$.
-- $\eta$ is the strength of the correlation between $U_t$ and $X_{\mu}$.
-- $\sigma_U^2$ is the variance of $U_t$.
-
-### Observation Equation
-
-The observed cases $Y_t^{\text{obs}}$ are related to the true cases $Y_t$ with observation error $\epsilon_o$:
-
-\begin{equation}
-Y_t^{\text{obs}} \mid Y_t \sim \text{Poisson}(Y_t e^{\epsilon_o})
-\end{equation}
-
-with $\epsilon_o \sim \mathcal{N}(0, \sigma_o^2)$, where $\sigma_o^2$ is the variance of the observation error.
-
-<!-- ```{dot}
-digraph G {
-    // Define nodes
-    Y_t [label="Y_t (Observed Cases)", shape=ellipse]
-    Y_t_obs [label="Y_t^{obs} (Observed Data)", shape=ellipse]
-    Y_t_plus_1 [label="Y_{t+1} (Next Obs. Case)", shape=ellipse]
-    X_mu [label="X_{\\mu} (Mean Temp.)", shape=ellipse]
-    X_sigma [label="X_{\\sigma} (Temp. Variance)", shape=ellipse]
-    U_t [label="U_t (Unobserved Driver)", shape=ellipse]
-    alpha [label="\\alpha (Parameter)", shape=rectangle]
-    beta_mu [label="\\beta_{\\mu} (Parameter)", shape=rectangle]
-    beta_sigma [label="\\beta_{\\sigma} (Parameter)", shape=rectangle]
-    gamma [label="\\gamma (Parameter)", shape=rectangle]
-    epsilon_o [label="\\epsilon_o (Observation Error)", shape=ellipse]
-    
-    // Define edges
-    Y_t_plus_1 -> Y_t [label="State Process (Poisson)"]
-    Y_t -> Y_t_plus_1 [label="Transition"]
-    Y_t_obs -> Y_t [label="Observation"]
-    Y_t -> X_mu [label="Dependent on Mean Temp."]
-    Y_t -> X_sigma [label="Dependent on Temp. Variance"]
-    Y_t -> U_t [label="Dependent on Unobserved Driver"]
-    Y_t_plus_1 -> X_mu [label="Dependent on X_{\\mu}"]
-    Y_t_plus_1 -> X_sigma [label="Dependent on X_{\\sigma}"]
-    Y_t_plus_1 -> U_t [label="Dependent on U_t"]
-    X_mu -> alpha [label="Parameter Influence"]
-    X_sigma -> beta_sigma [label="Parameter Influence"]
-    U_t -> gamma [label="Parameter Influence"]
-    
-    // Optional: Customizing style
-    node [style=filled, fillcolor=lightblue]
-}
-``` -->
 
 ### Priors
 
