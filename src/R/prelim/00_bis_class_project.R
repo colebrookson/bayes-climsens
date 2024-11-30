@@ -2,18 +2,19 @@
 library(ggplot2)
 set.seed(123)
 
-T <- 100 # Number of time points
-trend <- seq(10, 20, length.out = T) # Increasing mean
-seasonality <- 2 * sin(2 * pi * (1:T) / 20) # Seasonal component
-noise <- rnorm(T, mean = 1, sd = 0.2) # Random noise
-temperature <- trend * seasonality * noise # Multiplicative model
+T <- 120 # Number of time points
+trend <- seq(20, 25, length.out = T) # Increasing mean
+seasonality <- 5 * sin(2 * pi * (1:T) / 20) # Seasonal component
+noise <- rnorm(T, mean = 0, sd = 0.8) # Random noise
+temperature <- trend + seasonality + noise # Multiplicative model
+plot(temperature)
 
 # Convert data into a time series object
 # Assume seasonality repeats every 20 points
 temperature_ts <- ts(temperature, frequency = 20)
 
 # Perform multiplicative decomposition
-decomp <- stats::decompose(temperature_ts, type = "multiplicative")
+decomp <- stats::decompose(temperature_ts, type = "additive")
 
 # Plot the decomposed components
 plot(decomp)
@@ -24,22 +25,34 @@ seasonal_component <- decomp$seasonal
 random_component <- decomp$random
 
 # Plot original data and components
-p1 <- ggplot(data.frame(Time = 1:T, Temperature = temperature), aes(x = Time, y = Temperature)) +
+p1 <- ggplot(
+    data.frame(Time = 1:T, Temperature = temperature),
+    aes(x = Time, y = Temperature)
+) +
     geom_line(color = "blue") +
     labs(title = "Original Temperature Data", y = "Temperature", x = "Time") +
     theme_minimal()
 
-p2 <- ggplot(data.frame(Time = 1:T, Trend = trend_component), aes(x = Time, y = Trend)) +
+p2 <- ggplot(
+    data.frame(Time = 1:T, Trend = trend_component),
+    aes(x = Time, y = Trend)
+) +
     geom_line(color = "green") +
     labs(title = "Trend Component", y = "Trend", x = "Time") +
     theme_minimal()
 
-p3 <- ggplot(data.frame(Time = 1:T, Seasonal = seasonal_component), aes(x = Time, y = Seasonal)) +
+p3 <- ggplot(
+    data.frame(Time = 1:T, Seasonal = seasonal_component),
+    aes(x = Time, y = Seasonal)
+) +
     geom_line(color = "orange") +
     labs(title = "Seasonal Component", y = "Seasonal Effect", x = "Time") +
     theme_minimal()
 
-p4 <- ggplot(data.frame(Time = 1:T, Random = random_component), aes(x = Time, y = Random)) +
+p4 <- ggplot(
+    data.frame(Time = 1:T, Random = random_component),
+    aes(x = Time, y = Random)
+) +
     geom_line(color = "purple") +
     labs(title = "Random Component", y = "Remainder", x = "Time") +
     theme_minimal()
@@ -61,18 +74,28 @@ tau <- 0.5
 phi <- 2 # Dispersion parameter
 
 # Generate X_sigma: Sinusoidal pattern with autoregressive noise
-X_sigma <- numeric(T)
-X_sigma[1] <- rnorm(1, mean = 0, sd = 0.5)
-for (t in 2:T) {
-    X_sigma[t] <- 0.8 * X_sigma[t - 1] + sin(2 * pi * t / 20) + rnorm(1, mean = 0, sd = 0.2)
-}
+
+# X_sigma <- numeric(T)
+# X_sigma[1] <- rnorm(1, mean = 0, sd = 0.5)
+# for (t in 2:T) {
+#     X_sigma[t] <- 0.8 * X_sigma[t - 1] + sin(2 * pi * t / 20) +
+#      rnorm(1, mean = 0, sd = 0.2)
+# }
+
+#' NOTE: instead of doing this with noise, I'm just going to use the data that
+#' got decomposed from the timeseries
+X_sigma <- seasonal_component[10:110] # taking the bit I can get the mean from
 
 # Generate X_mu: Linear trend with autoregressive noise
-X_mu <- numeric(T)
-X_mu[1] <- 20
-for (t in 2:T) {
-    X_mu[t] <- 0.8 * X_mu[t - 1] + 0.05 * t + rnorm(1, mean = 0, sd = 0.2)
-}
+# X_mu <- numeric(T)
+# X_mu[1] <- 20
+# for (t in 2:T) {
+#     X_mu[t] <- 0.8 * X_mu[t - 1] + 0.05 * t + rnorm(1, mean = 0, sd = 0.2)
+# }
+
+#' NOTE: instead of doing this with noise, I'm just going to use the data that
+#' got decomposed from the timeseries
+X_mu <- trend_component[11:110] # taking the bit I can get the mean from
 
 # Generate latent process U_t
 U <- numeric(T)
