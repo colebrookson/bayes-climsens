@@ -67,8 +67,8 @@ print(p4)
 # Parameters
 T <- 100 # Number of time points
 beta_0 <- 1.0
-beta_1 <- 0.5
-beta_2 <- -0.3
+beta_1 <- 0.9
+beta_2 <- 0.3
 rho <- 0.8
 tau <- 0.5
 phi <- 2 # Dispersion parameter
@@ -84,7 +84,7 @@ phi <- 2 # Dispersion parameter
 
 #' NOTE: instead of doing this with noise, I'm just going to use the data that
 #' got decomposed from the timeseries
-X_sigma <- seasonal_component[10:110] # taking the bit I can get the mean from
+X_sigma <- seasonal_component[11:110] # taking the bit I can get the mean from
 
 # Generate X_mu: Linear trend with autoregressive noise
 # X_mu <- numeric(T)
