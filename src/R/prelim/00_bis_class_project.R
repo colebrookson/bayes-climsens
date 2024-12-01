@@ -218,39 +218,23 @@ print(response_plot)
 
 # Simulated Data
 set.seed(123)
-N <- 100
-beta_0 <- 1
-beta_1 <- 0.5
-beta_2 <- -0.3
-rho <- 0.8
-tau <- 0.5
-phi <- 2
-
-# Covariates
-X_mu <- cumsum(rnorm(N, mean = 0.05, sd = 0.1)) # Increasing trend
-X_sigma <- sin(2 * pi * (1:N) / 20) + rnorm(N, sd = 0.1) # Seasonal pattern
-
-# Latent process
-U <- numeric(N)
-U[1] <- rnorm(1, 0, tau)
-for (t in 2:N) {
-    U[t] <- rnorm(1, mean = rho * U[t - 1], sd = tau)
-}
-
-# Lambda and Y generation
-lambda <- exp(beta_0 + beta_1 * X_mu + beta_2 * X_sigma + U)
-size <- 1 / phi
-prob <- size / (size + lambda)
-Y <- rnbinom(N, size = size, prob = prob)
+N <- t_usable
 
 # Prepare data for Stan
 stan_data <- list(N = N, Y = Y, X_mu = X_mu, X_sigma = X_sigma)
 
 # Compile Stan model
-stan_model <- rstan::stan_model(file = "negative_binomial_model.stan")
+stan_model <- rstan::stan_model(
+    file = here::here("./src/stan/00_negative_binomial_model.stan")
+)
 
 # Fit the model
-fit <- rstan::sampling(stan_model, data = stan_data, iter = 2000, chains = 4, seed = 123)
+fit <- rstan::sampling(stan_model,
+    data = stan_data,
+    iter = 2000,
+    chains = 4,
+    seed = 123
+)
 
 # Print summary of the results
 print(fit, pars = c("beta_0", "beta_1", "beta_2", "tau", "phi"))
