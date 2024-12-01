@@ -8,8 +8,7 @@ parameters {
   real beta_0; // Intercept
   real beta_1; // Coefficient for X_mu
   real beta_2; // Coefficient for X_sigma
-  // vector[N] U;                 // Latent process -- WE DONT ESTIMATE THIS
-  real<lower=0> tau; // Standard deviation of U
+  real<lower=0> tau; // Standard deviation
   real<lower=0> phi; // Dispersion parameter
 }
 model {
@@ -21,12 +20,6 @@ model {
   beta_2 ~ normal(0, 10);
   tau ~ normal(0, 2);
   phi ~ normal(0, 2);
-  
-  // Latent process prior (AR(1))
-  //   U[1] ~ normal(0, tau);
-  //   for (n in 2:N) {
-  //     U[n] ~ normal(U[n - 1], tau);
-  //   }
   
   // Likelihood
   for (n in 1 : N) {
