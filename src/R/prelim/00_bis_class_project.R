@@ -1,17 +1,28 @@
+##' File Description
+##' AUTHOR: Cole B. Brookson
+##' DATE OF CREATION: 2024-11-19
+#'
+#' This file contains the simple analysis that will be displayed for the final
+#' project in BIS567
+#'
+#'
+
 #' set up ======================================================================
 library(ggplot2)
+source(here::here("./src/R/functions/00_global_functions.R"))
 set.seed(123)
 
-T <- 120 # Number of time points
+years <- 50
+T <- years * 365 # Number of time points
 trend <- seq(20, 25, length.out = T) # Increasing mean
-seasonality <- 5 * sin(2 * pi * (1:T) / 20) # Seasonal component
-noise <- rnorm(T, mean = 0, sd = 0.8) # Random noise
+seasonality <- 5 * sin(2 * pi * (1:T) / 180) # Seasonal component
+noise <- rnorm(T, mean = 0, sd = 3) # Random noise
 temperature <- trend + seasonality + noise # Multiplicative model
 plot(temperature)
 
 # Convert data into a time series object
 # Assume seasonality repeats every 20 points
-temperature_ts <- ts(temperature, frequency = 20)
+temperature_ts <- stats::ts(temperature, frequency = 180)
 
 # Perform multiplicative decomposition
 decomp <- stats::decompose(temperature_ts, type = "additive")
@@ -31,7 +42,7 @@ p1 <- ggplot(
 ) +
     geom_line(color = "blue") +
     labs(title = "Original Temperature Data", y = "Temperature", x = "Time") +
-    theme_minimal()
+    theme_base()
 
 p2 <- ggplot(
     data.frame(Time = 1:T, Trend = trend_component),
@@ -39,7 +50,7 @@ p2 <- ggplot(
 ) +
     geom_line(color = "green") +
     labs(title = "Trend Component", y = "Trend", x = "Time") +
-    theme_minimal()
+    theme_base()
 
 p3 <- ggplot(
     data.frame(Time = 1:T, Seasonal = seasonal_component),
@@ -47,7 +58,7 @@ p3 <- ggplot(
 ) +
     geom_line(color = "orange") +
     labs(title = "Seasonal Component", y = "Seasonal Effect", x = "Time") +
-    theme_minimal()
+    theme_base()
 
 p4 <- ggplot(
     data.frame(Time = 1:T, Random = random_component),
@@ -55,17 +66,35 @@ p4 <- ggplot(
 ) +
     geom_line(color = "purple") +
     labs(title = "Random Component", y = "Remainder", x = "Time") +
-    theme_minimal()
+    theme_base()
 
 # Print the plots
 print(p1)
 print(p2)
 print(p3)
 print(p4)
+
+# Ensure patchwork is installed
+if (!requireNamespace("patchwork", quietly = TRUE)) {
+    install.packages("patchwork")
+}
+
+# Combine the plots using patchwork
+combined_plot <- p1 + p2 + p3 + p4 +
+    patchwork::plot_layout(ncol = 2) + # Arrange in a 2x2 grid
+    patchwork::plot_annotation(
+        # title = "Multiplicative Decomposition of Temperature Data",
+        # subtitle = "Original Data, Trend, Seasonal, and Random Components",
+        theme = theme_base()
+    )
+
+# Display the combined plot
+print(combined_plot)
+
 #' data simulation =============================================================
 
 # Parameters
-T <- 100 # Number of time points
+T <- years * 365 # Number of time points
 beta_0 <- 1.0
 beta_1 <- 0.9
 beta_2 <- 0.3
@@ -84,7 +113,8 @@ phi <- 2 # Dispersion parameter
 
 #' NOTE: instead of doing this with noise, I'm just going to use the data that
 #' got decomposed from the timeseries
-X_sigma <- seasonal_component[11:110] # taking the bit I can get the mean from
+#' # taking the bit I can get the mean from
+X_sigma <- seasonal_component[which(!is.na(trend_component))]
 
 # Generate X_mu: Linear trend with autoregressive noise
 # X_mu <- numeric(T)
@@ -95,24 +125,35 @@ X_sigma <- seasonal_component[11:110] # taking the bit I can get the mean from
 
 #' NOTE: instead of doing this with noise, I'm just going to use the data that
 #' got decomposed from the timeseries
-X_mu <- trend_component[11:110] # taking the bit I can get the mean from
-
+#' # taking the bit I can get the mean from
+X_mu <- trend_component[which(!is.na(trend_component))]
+t_usable <- length(X_mu)
+if (length(X_mu) != length(X_sigma)) {
+    print(length(X_mu))
+    print(length(X_sigma))
+    stop("X vectors not the same length")
+}
 # Generate latent process U_t
-U <- numeric(T)
+U <- numeric(t_usable)
 U[1] <- rnorm(1, mean = 0, sd = tau) # Initial latent state
-for (t in 2:T) {
+for (t in 2:t_usable) {
     U[t] <- rnorm(1, mean = rho * U[t - 1], sd = tau)
 }
 
 # Calculate lambda_t (rate parameter for Negative Binomial)
-lambda <- numeric(T)
+lambda <- numeric(t_usable)
 lambda[1] <- exp(beta_0 + beta_1 * X_mu[1] + beta_2 * X_sigma[1] + U[1])
-Y <- numeric(T)
+Y <- numeric(t_usable)
 
 # Simulate Y_{t+1} from Negative Binomial
-Y[1] <- 100
-for (t in 1:(T - 1)) {
+Y[1] <- 1000
+for (t in 1:(t_usable - 1)) {
     lambda[t + 1] <- exp(beta_0 + beta_1 * X_mu[t] + beta_2 * X_sigma[t] + U[t])
+    if (is.na(lambda[t + 1])) {
+        print(t)
+        print(lambda[t + 1])
+        stop("NA")
+    }
     size <- 1 / phi # Convert dispersion phi to size parameter
     prob <- size / (size + lambda[t + 1])
     Y[t + 1] <- rnbinom(1, size = size, prob = prob)
@@ -120,7 +161,7 @@ for (t in 1:(T - 1)) {
 
 # Create data frame for plotting
 sim_data <- data.frame(
-    Time = 1:T,
+    Time = 1:t_usable,
     X_mu = X_mu,
     X_sigma = X_sigma,
     U = U,
@@ -131,25 +172,107 @@ sim_data <- data.frame(
 p1 <- ggplot(sim_data, aes(x = Time, y = X_mu)) +
     geom_line(color = "blue") +
     labs(title = "Covariate X_mu (Linear Trend)", y = "X_mu", x = "Time") +
-    theme_minimal()
+    theme_base()
 
 p2 <- ggplot(sim_data, aes(x = Time, y = X_sigma)) +
     geom_line(color = "green") +
-    labs(title = "Covariate X_sigma (Sinusoidal Pattern)", y = "X_sigma", x = "Time") +
-    theme_minimal()
+    labs(
+        title = "Covariate X_sigma (Sinusoidal Pattern)",
+        y = "X_sigma", x = "Time"
+    ) +
+    theme_base()
 
 p3 <- ggplot(sim_data, aes(x = Time, y = U)) +
     geom_line(color = "purple") +
     labs(title = "Latent Process U", y = "U", x = "Time") +
-    theme_minimal()
+    theme_base()
 
 p4 <- ggplot(sim_data, aes(x = Time, y = Y)) +
     geom_line(color = "red") +
     labs(title = "Observed Counts Y", y = "Y", x = "Time") +
-    theme_minimal()
+    theme_base()
 
-# Print plots
-print(p1)
-print(p2)
-print(p3)
-print(p4)
+# Combine the plots using patchwork
+combined_plot <- p1 + p2 + p3 + p4 +
+    patchwork::plot_layout(ncol = 2) + # Arrange in a 2x2 grid
+    patchwork::plot_annotation(
+        # title = "Multiplicative Decomposition of Temperature Data",
+        # subtitle = "Original Data, Trend, Seasonal, and Random Components",
+        theme = theme_base()
+    )
+
+# Display the combined plot
+print(combined_plot)
+
+
+# model
+
+# Load necessary libraries
+if (!requireNamespace("rstan", quietly = TRUE)) {
+    install.packages("rstan")
+}
+if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    install.packages("ggplot2")
+}
+rstan::rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+
+# Simulated Data
+set.seed(123)
+N <- 100
+beta_0 <- 1
+beta_1 <- 0.5
+beta_2 <- -0.3
+rho <- 0.8
+tau <- 0.5
+phi <- 2
+
+# Covariates
+X_mu <- cumsum(rnorm(N, mean = 0.05, sd = 0.1)) # Increasing trend
+X_sigma <- sin(2 * pi * (1:N) / 20) + rnorm(N, sd = 0.1) # Seasonal pattern
+
+# Latent process
+U <- numeric(N)
+U[1] <- rnorm(1, 0, tau)
+for (t in 2:N) {
+    U[t] <- rnorm(1, mean = rho * U[t - 1], sd = tau)
+}
+
+# Lambda and Y generation
+lambda <- exp(beta_0 + beta_1 * X_mu + beta_2 * X_sigma + U)
+size <- 1 / phi
+prob <- size / (size + lambda)
+Y <- rnbinom(N, size = size, prob = prob)
+
+# Prepare data for Stan
+stan_data <- list(N = N, Y = Y, X_mu = X_mu, X_sigma = X_sigma)
+
+# Compile Stan model
+stan_model <- rstan::stan_model(file = "negative_binomial_model.stan")
+
+# Fit the model
+fit <- rstan::sampling(stan_model, data = stan_data, iter = 2000, chains = 4, seed = 123)
+
+# Print summary of the results
+print(fit, pars = c("beta_0", "beta_1", "beta_2", "tau", "phi"))
+
+# Plot the results
+rstan::traceplot(fit, pars = c("beta_0", "beta_1", "beta_2", "tau", "phi"))
+
+# Extract posterior samples
+posterior_samples <- rstan::extract(fit)
+
+# Visualize posterior distributions
+library(ggplot2)
+posterior_df <- data.frame(
+    beta_0 = posterior_samples$beta_0,
+    beta_1 = posterior_samples$beta_1,
+    beta_2 = posterior_samples$beta_2,
+    tau = posterior_samples$tau,
+    phi = posterior_samples$phi
+)
+
+ggplot(posterior_df, aes(x = beta_1)) +
+    geom_density(fill = "blue", alpha = 0.5) +
+    labs(title = "Posterior Distribution of beta_1", x = "beta_1", y = "Density") +
+    theme_minimal()
