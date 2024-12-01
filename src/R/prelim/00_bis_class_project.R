@@ -12,6 +12,15 @@ library(ggplot2)
 source(here::here("./src/R/functions/00_global_functions.R"))
 set.seed(123)
 
+# Load necessary libraries
+if (!requireNamespace("rstan", quietly = TRUE)) {
+    install.packages("rstan")
+}
+rstan::rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+
+# temperature generation =======================================================
+
 years <- 50
 T <- years * 365 # Number of time points
 trend <- seq(20, 25, length.out = T) # Increasing mean
@@ -169,12 +178,12 @@ sim_data <- data.frame(
 )
 
 # Plot covariates and latent process
-p1 <- ggplot(sim_data, aes(x = Time, y = X_mu)) +
+x_mu_p <- ggplot(sim_data, aes(x = Time, y = X_mu)) +
     geom_line(color = "blue") +
     labs(title = "Covariate X_mu (Linear Trend)", y = "X_mu", x = "Time") +
     theme_base()
 
-p2 <- ggplot(sim_data, aes(x = Time, y = X_sigma)) +
+x_sigma_p <- ggplot(sim_data, aes(x = Time, y = X_sigma)) +
     geom_line(color = "green") +
     labs(
         title = "Covariate X_sigma (Sinusoidal Pattern)",
@@ -182,18 +191,18 @@ p2 <- ggplot(sim_data, aes(x = Time, y = X_sigma)) +
     ) +
     theme_base()
 
-p3 <- ggplot(sim_data, aes(x = Time, y = U)) +
+u_p <- ggplot(sim_data, aes(x = Time, y = U)) +
     geom_line(color = "purple") +
     labs(title = "Latent Process U", y = "U", x = "Time") +
     theme_base()
 
-p4 <- ggplot(sim_data, aes(x = Time, y = Y)) +
+y_p <- ggplot(sim_data, aes(x = Time, y = Y)) +
     geom_line(color = "red") +
     labs(title = "Observed Counts Y", y = "Y", x = "Time") +
     theme_base()
 
 # Combine the plots using patchwork
-combined_plot <- p1 + p2 + p3 + p4 +
+response_plot <- x_mu_p + x_sigma_p + u_p + y_p +
     patchwork::plot_layout(ncol = 2) + # Arrange in a 2x2 grid
     patchwork::plot_annotation(
         # title = "Multiplicative Decomposition of Temperature Data",
@@ -202,20 +211,10 @@ combined_plot <- p1 + p2 + p3 + p4 +
     )
 
 # Display the combined plot
-print(combined_plot)
+print(response_plot)
 
 
-# model
-
-# Load necessary libraries
-if (!requireNamespace("rstan", quietly = TRUE)) {
-    install.packages("rstan")
-}
-if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    install.packages("ggplot2")
-}
-rstan::rstan_options(auto_write = TRUE)
-options(mc.cores = parallel::detectCores())
+#' model =======================================================================
 
 # Simulated Data
 set.seed(123)
