@@ -23,7 +23,7 @@ options(mc.cores = parallel::detectCores())
 
 years <- 50
 T <- years * 365 # Number of time points
-trend <- seq(20, 25, length.out = T) # Increasing mean
+trend <- seq(20, 23, length.out = T) # Increasing mean
 seasonality <- 5 * sin(2 * pi * (1:T) / 180) # Seasonal component
 noise <- rnorm(T, mean = 0, sd = 3) # Random noise
 temperature <- trend + seasonality + noise # Multiplicative model
@@ -155,7 +155,11 @@ lambda[1] <- exp(beta_0 + beta_1 * X_mu[1] + beta_2 * X_sigma[1] + U[1])
 Y <- numeric(t_usable)
 
 # Simulate Y_{t+1} from Negative Binomial
-Y[1] <- 1000
+Y[1] <- 10
+
+# FOR NOW, we're going to scale:
+X_mu <- scale(X_mu)
+X_sigma <- scale(X_sigma)
 for (t in 1:(t_usable - 1)) {
     lambda[t + 1] <- exp(beta_0 + beta_1 * X_mu[t] + beta_2 * X_sigma[t] + U[t])
     if (is.na(lambda[t + 1])) {
@@ -213,7 +217,6 @@ response_plot <- x_mu_p + x_sigma_p + u_p + y_p +
 # Display the combined plot
 print(response_plot)
 
-
 #' model =======================================================================
 
 # Simulated Data
@@ -221,7 +224,13 @@ set.seed(123)
 N <- t_usable
 
 # Prepare data for Stan
-stan_data <- list(N = N, Y = Y, X_mu = X_mu, X_sigma = X_sigma)
+Y_stan <- as.integer(as.character(Y))
+stan_data <- list(
+    N = N,
+    Y = Y,
+    X_mu = as.vector(X_mu), # Convert to vector
+    X_sigma = as.vector(X_sigma) # Convert to vector
+)
 
 # Compile Stan model
 stan_model <- rstan::stan_model(
