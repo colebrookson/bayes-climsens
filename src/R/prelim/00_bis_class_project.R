@@ -142,13 +142,39 @@ if (length(X_mu) != length(X_sigma)) {
     print(length(X_sigma))
     stop("X vectors not the same length")
 }
-# Generate latent process U_t
-U <- numeric(t_usable)
-U[1] <- rnorm(1, mean = 0, sd = tau) # Initial latent state
-for (t in 2:t_usable) {
-    U[t] <- rnorm(1, mean = rho * U[t - 1], sd = tau)
+# Generate latent process U_t based on temperature T
+generate_U <- function(X_mu, rho, tau, t_usable) {
+    U <- numeric(t_usable)
+    U[1] <- rnorm(1, mean = rho * X_mu[1], sd = tau) # Initial latent state
+    for (t in 2:t_usable) {
+        epsilon_t <- rnorm(1, mean = 0, sd = tau) # Stochastic component
+        deterministic <- rho * X_mu[t] # Correlation with T
+        stochastic <- (1 - rho) * U[t - 1] # Autoregressive component
+        U[t] <- deterministic + sqrt(1 - rho^2) * epsilon_t + stochastic
+    }
+    return(U)
 }
 
+tau <- 1
+rho <- 0.2 # Correlation between U and T
+U <- generate_U(X_mu, rho, tau, t_usable)
+
+# Plot the results
+library(ggplot2)
+df <- data.frame(Time = 1:t_usable, Temperature = X_mu, Latent_Process = U)
+df_long <- df %>%
+    tidyr::pivot_longer(
+        cols = c(Temperature, Latent_Process),
+        names_to = "Variable",
+        values_to = "Value"
+    )
+
+# Create the plot with faceting
+ggplot(df_long, aes(x = Time, y = Value)) +
+    geom_line(aes(colour = Variable)) +
+    facet_wrap(~Variable, scales = "free_y", ncol = 1) +
+    labs(y = "Value", x = "Time") +
+    theme_base()
 # Calculate lambda_t (rate parameter for Negative Binomial)
 lambda <- numeric(t_usable)
 lambda[1] <- exp(beta_0 + beta_1 * X_mu[1] + beta_2 * X_sigma[1] + U[1])
@@ -156,7 +182,6 @@ Y <- numeric(t_usable)
 
 # Simulate Y_{t+1} from Negative Binomial
 Y[1] <- 10
-
 # FOR NOW, we're going to scale:
 X_mu <- scale(X_mu)
 X_sigma <- scale(X_sigma)
@@ -240,7 +265,7 @@ stan_model <- rstan::stan_model(
 # Fit the model
 fit <- rstan::sampling(stan_model,
     data = stan_data,
-    iter = 2000,
+    iter = 5000,
     chains = 4,
     seed = 123
 )

@@ -15,11 +15,11 @@ model {
   vector[N] lambda; // Rate parameter for NegBinom
   
   // Priors
-  beta_0 ~ normal(0, 10);
-  beta_1 ~ normal(0, 10);
-  beta_2 ~ normal(0, 10);
-  tau ~ normal(0, 2);
-  phi ~ normal(0, 2);
+  beta_0 ~ normal(0, 100); // Less informative prior
+  beta_1 ~ normal(0, 100); // Less informative prior
+  beta_2 ~ normal(0, 100); // Less informative prior
+  tau ~ normal(0, 10); // Weakly informative half-normal
+  phi ~ normal(0, 10); // Weakly informative half-normal
   
   // Likelihood
   for (n in 1 : N) {
