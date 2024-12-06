@@ -107,6 +107,7 @@ T <- years * 365 # Number of time points
 beta_0 <- 1.0
 beta_1 <- 0.9
 beta_2 <- 0.3
+beta_3 <- 0.5
 rho <- 0.8
 tau <- 0.5
 phi <- 2 # Dispersion parameter
@@ -186,7 +187,8 @@ Y[1] <- 10
 X_mu <- scale(X_mu)
 X_sigma <- scale(X_sigma)
 for (t in 1:(t_usable - 1)) {
-    lambda[t + 1] <- exp(beta_0 + beta_1 * X_mu[t] + beta_2 * X_sigma[t] + U[t])
+    lambda[t + 1] <- exp(beta_0 + beta_1 * X_mu[t] +
+        beta_2 * X_sigma[t] + beta_3 * U[t])
     if (is.na(lambda[t + 1])) {
         print(t)
         print(lambda[t + 1])
@@ -265,7 +267,7 @@ stan_model <- rstan::stan_model(
 # Fit the model
 fit <- rstan::sampling(stan_model,
     data = stan_data,
-    iter = 5000,
+    iter = 2000,
     chains = 4,
     seed = 123
 )
@@ -292,4 +294,129 @@ posterior_df <- data.frame(
 ggplot(posterior_df, aes(x = beta_1)) +
     geom_density(fill = "blue", alpha = 0.5) +
     labs(title = "Posterior Distribution of beta_1", x = "beta_1", y = "Density") +
+    theme_minimal()
+
+#' sensitivity analysis ========================================================
+
+# function to run simulation and estimation for given rho
+simulate_and_fit <- function(
+    rho_vals, beta_3, stan_model_path,
+    iterations = 2000, chains = 4) {
+    results <- data.frame(rho = numeric(), beta_1_mean = numeric(), beta_1_sd = numeric())
+    fit_list <- list()
+    for (i in seq_along(rho_vals)) {
+        rho <- rho_vals[i]
+        cat(sprintf(
+            "Starting simulation for rho = %.2f (%d/%d)\n",
+            rho, i, length(rho_vals)
+        ))
+
+        # Simulate data
+        U <- generate_U(X_mu = X_mu, rho = rho, tau = tau, t_usable = t_usable)
+
+        lambda <- numeric(t_usable)
+        lambda[1] <- exp(beta_0 + beta_1 * X_mu[1] + beta_2 * X_sigma[1] + U[1])
+        Y <- numeric(t_usable)
+        Y[1] <- 10
+
+        for (t in 1:(t_usable - 1)) {
+            lambda[t + 1] <- exp(beta_0 + beta_1 * X_mu[t] +
+                beta_2 * X_sigma[t] + beta_3 * U[t])
+            size <- 1 / phi # Convert dispersion phi to size parameter
+            prob <- size / (size + lambda[t + 1])
+            Y[t + 1] <- rnbinom(1, size = size, prob = prob)
+        }
+
+        # Prepare data for Stan
+        Y_stan <- as.integer(as.character(Y))
+        stan_data <- list(
+            N = t_usable,
+            Y = Y_stan,
+            X_mu = as.vector(X_mu), # Convert to vector
+            X_sigma = as.vector(X_sigma) # Convert to vector
+        )
+
+        # Fit the model
+        cat("Compiling and sampling the Stan model...\n")
+        fit <- rstan::sampling(
+            stan_model,
+            data = stan_data,
+            iter = iterations,
+            chains = chains,
+            seed = 123,
+            verbose = FALSE
+        )
+        fit_list[[paste("rho_", rho, sep = "")]] <- fit
+
+        # Extract posterior samples
+        posterior_samples <- rstan::extract(fit)
+        beta_1_samples <- posterior_samples$beta_1
+
+        # Summarize results
+        beta_1_mean <- mean(beta_1_samples)
+        beta_1_sd <- sd(beta_1_samples)
+
+        cat(sprintf(
+            "Finished simulation for rho = %.2f: beta_1_mean = %.4f, beta_1_sd = %.4f\n\n",
+            rho, beta_1_mean, beta_1_sd
+        ))
+
+        # Append results
+        results <- rbind(results, data.frame(rho = rho, beta_1_mean = beta_1_mean, beta_1_sd = beta_1_sd))
+    }
+
+    return(list(results, fit_list))
+}
+
+# explore impact of rho on beta_1 estimation
+rho_vals <- seq(0, 1, by = 0.2)
+beta_1_estimates <- numeric(length(rho_values))
+
+results <- simulate_and_fit(
+    rho_vals = rho_vals,
+    beta_3 = beta_3,
+    stan_model_path = "./src/stan/00_negative_binomial_model.stan",
+    iterations = 2000,
+    chains = 4
+)
+
+# compare true vs estimated beta_1
+results <- data.frame(
+    rho = rho_values,
+    estimated_beta_1 = beta_1_estimates,
+    true_beta_1 = beta_1
+)
+
+# plot results
+ggplot(results, aes(x = rho)) +
+    geom_line(aes(y = estimated_beta_1, color = "Estimated beta_1")) +
+    geom_hline(aes(yintercept = true_beta_1, color = "True beta_1"), linetype = "dashed") +
+    labs(
+        title = "Impact of Correlation (rho) on beta_1 Estimation",
+        x = "rho",
+        y = "beta_1"
+    ) +
+    scale_color_manual(values = c("Estimated beta_1" = "blue", "True beta_1" = "red")) +
+    theme_minimal()
+
+
+ggplot(results, aes(x = rho, y = beta_1_mean)) +
+    geom_line(color = "blue") +
+    geom_point(size = 2) +
+    labs(
+        title = "Mean of Posterior Samples for beta_1 Across rho",
+        x = "rho",
+        y = "Mean of beta_1"
+    ) +
+    theme_minimal()
+
+# Plot beta_1 standard deviation vs. rho
+ggplot(results, aes(x = rho, y = beta_1_sd)) +
+    geom_line(color = "red") +
+    geom_point(size = 2) +
+    labs(
+        title = "Standard Deviation of Posterior Samples for beta_1 Across rho",
+        x = "rho",
+        y = "Standard Deviation of beta_1"
+    ) +
     theme_minimal()
