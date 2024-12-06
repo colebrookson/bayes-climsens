@@ -380,6 +380,8 @@ results <- simulate_and_fit(
     chains = 4
 )
 
+# confused
+
 # compare true vs estimated beta_1
 results <- data.frame(
     rho = rho_values,
